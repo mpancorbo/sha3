@@ -7,12 +7,9 @@
 .mmx
 .model flat, C
 
-r   equ <ebx>
-i   equ <ecx>
-j   equ <edx>
-t   equ <mm0>
-_st equ <esi>
-_bc equ <edi>
+option prologue:none
+option epilogue:none
+option casemap:none
 
 include sha3.inc
 
@@ -33,35 +30,38 @@ rotl64 proc
 rotl64 endp
 
 ; ***********************************************
+;
+; SHA3_Init (&ctx, int);
+;
 ; ***********************************************
   public SHA3_Init
-  public _SHA3_Init
-_SHA3_Init:
-SHA3_Init proc ctx:dword, sha_type:dword
+SHA3_Init proc
     pushad
-    mov    edi, ctx
-    mov    edx, sha_type
+    mov    edi, [esp+32+4]    ; context
+    mov    edx, [esp+32+8]    ; type
+    
+    ; memset (ctx, 0, sizeof SHA3_CTX);
     mov    ebx, edi
     mov    ecx, sizeof SHA3_CTX
     xor    eax, eax
     rep    stosb
 
-    mov    al, SHA3_224_BLK_LEN
-    mov    cl, SHA3_224_HASH_LEN
+    mov    al, SHA3_224_CBLOCK
+    mov    cl, SHA3_224_DIGEST_LENGTH
     dec    edx
     js     exit_init
     
-    mov    al, SHA3_256_BLK_LEN
-    mov    cl, SHA3_256_HASH_LEN
+    mov    al, SHA3_256_CBLOCK
+    mov    cl, SHA3_256_DIGEST_LENGTH
     jz     exit_init
     
-    mov    al, SHA3_384_BLK_LEN
-    mov    cl, SHA3_384_HASH_LEN
+    mov    al, SHA3_384_CBLOCK
+    mov    cl, SHA3_384_DIGEST_LENGTH
     dec    edx
     jz     exit_init
     
-    mov    al, SHA3_512_BLK_LEN
-    mov    cl, SHA3_512_HASH_LEN
+    mov    al, SHA3_512_CBLOCK
+    mov    cl, SHA3_512_DIGEST_LENGTH
 exit_init:
     mov    [ebx][SHA3_CTX.blklen ], eax
     mov    [ebx][SHA3_CTX.dgstlen], ecx
@@ -71,16 +71,17 @@ exit_init:
 SHA3_Init endp
 
 ; ***********************************************
+;
+; SHA3_Update (SHA3_CTX*, void*, size_t);
+;
 ; ***********************************************
   public SHA3_Update
-  public _SHA3_Update
-_SHA3_Update:
-SHA3_Update proc ctx:dword, data:ptr byte, len:dword
+SHA3_Update proc
     pushad
-    mov    ebx, ctx
-    mov    edx, [ebx][SHA3_CTX.index]
-    mov    esi, data
-    mov    eax, len
+    mov    ebx, [esp+32+4]             ; ctx
+    mov    edx, [ebx][SHA3_CTX.index]  ; idx
+    mov    esi, [esp+32+8]             ; input
+    mov    eax, [esp+32+12]            ; len
     .while 1
       ; r = MIN(len, ctx->blklen - idx);
       mov    ecx, [ebx][SHA3_CTX.blklen]
@@ -98,7 +99,6 @@ SHA3_Update proc ctx:dword, data:ptr byte, len:dword
       .break .if edx < [ebx][SHA3_CTX.blklen]
       push   ebx
       call   SHA3_Transform
-      pop    edx
       xor    edx, edx
     .endw
     mov   [ebx][SHA3_CTX.index], edx
@@ -107,15 +107,16 @@ SHA3_Update proc ctx:dword, data:ptr byte, len:dword
 SHA3_Update endp
 
 ; ***********************************************
+;
+; SHA3_Final (void*, SHA3_CTX*);
+;
 ; ***********************************************
   public SHA3_Final
-  public _SHA3_Final
-_SHA3_Final:
-SHA3_Final proc dgst:ptr byte, ctx:dword
+SHA3_Final proc
     pushad
 
-    mov    esi, ctx
-    mov    edi, dgst
+    mov    esi, [esp+32+8]
+    mov    edi, [esp+32+4]
     
     lea    eax, [esi][SHA3_CTX.blk]
     mov    ebx, [esi][SHA3_CTX.index]
@@ -125,7 +126,6 @@ SHA3_Final proc dgst:ptr byte, ctx:dword
     
     push   esi
     call   SHA3_Transform
-    pop    eax
     
     mov    ecx, [esi][SHA3_CTX.dgstlen]
     rep    movsb
@@ -133,20 +133,34 @@ SHA3_Final proc dgst:ptr byte, ctx:dword
     ret
 SHA3_Final endp
 
+r   equ <ebx>
+i   equ <ecx>
+j   equ <edx>
+t   equ <mm0>
+_st equ <esi>
+_bc equ <edi>
+
+SHA3_WS struct
+  bc   qword 5 dup (?)
+  rnds dword ?
+SHA3_WS ends
+
 ; ***********************************************
+;
+; SHA3_Transform (SHA3_CTX*);
+;
 ; ***********************************************
   public SHA3_Transform
-  public _SHA3_Transform
-_SHA3_Transform:
-SHA3_Transform proc ctx:dword
-    local bc[5]:qword
-    local rnds :dword
-    
+SHA3_Transform proc
     pushad
     
-    mov    ebx, ctx
+    mov    ebx, [esp+32+4]              ; ctx
+    
+    ; set up workspace
+    sub    esp, sizeof SHA3_WS
+    
     mov    eax, [ebx][SHA3_CTX.rounds]
-    mov    rnds, eax
+    mov    [esp][SHA3_WS.rnds], eax
     lea    edi, [ebx][SHA3_CTX.state]
     lea    esi, [ebx][SHA3_CTX.blk]
     mov    ecx, [ebx][SHA3_CTX.blklen]
@@ -163,7 +177,7 @@ xor_blk:
     jnz    xor_blk
     
     lea    _st, [ebx][SHA3_CTX.state]
-    lea    _bc, bc
+    lea    _bc, [esp][SHA3_WS.bc]
     xor    r, r
     
     .repeat
@@ -293,9 +307,10 @@ xor_blk:
       movq    [_st], t
     
       inc  r
-    .until r == rnds
+    .until r == [esp][SHA3_WS.rnds]
+    add    esp, sizeof SHA3_WS
     popad
-    ret
+    ret    4
 SHA3_Transform endp
 
 keccakf_rotc label dword

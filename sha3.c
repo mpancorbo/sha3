@@ -2,11 +2,6 @@
 // SHA-3 in C
 // Odzhan
 
-#include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-
 #include "sha3.h"
 
 void SHA3_Init (SHA3_CTX *ctx, int type)
@@ -17,19 +12,19 @@ void SHA3_Init (SHA3_CTX *ctx, int type)
     switch (type)
     {
       case SHA3_224:
-        ctx->blklen  = SHA3_224_BLK_LEN;
+        ctx->blklen  = SHA3_224_CBLOCK;
         ctx->dgstlen = SHA3_224_DIGEST_LENGTH;
         break;
       case SHA3_384:
-        ctx->blklen  = SHA3_384_BLK_LEN;
+        ctx->blklen  = SHA3_384_CBLOCK;
         ctx->dgstlen = SHA3_384_DIGEST_LENGTH;
         break;
       case SHA3_512:
-        ctx->blklen  = SHA3_512_BLK_LEN;
+        ctx->blklen  = SHA3_512_CBLOCK;
         ctx->dgstlen = SHA3_512_DIGEST_LENGTH;
         break;
       default:
-        ctx->blklen  = SHA3_256_BLK_LEN;
+        ctx->blklen  = SHA3_256_CBLOCK;
         ctx->dgstlen = SHA3_256_DIGEST_LENGTH;
         break;
     }   
@@ -103,8 +98,6 @@ void SHA3_Transform (SHA3_CTX *ctx)
       st[0] ^= keccakf_rndc[round];
     }
 }
-
-#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 void SHA3_Update (SHA3_CTX* ctx, void *in, size_t len) {
     uint8_t *p;

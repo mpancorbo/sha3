@@ -1,5 +1,8 @@
 
+
 #include "sha3.h"
+
+#include <ctype.h>
 
 char *text[] =
 { "",
@@ -88,8 +91,7 @@ int main (int argc, char *argv[])
 {
   int i, fails;
   char *hdrs[]={"SHA3-224","SHA3-256","SHA3-384","SHA3-512"};
-  puts ("\nSHA-3 by Odzhan");
-  
+
   if (argc < 2) {
     if (!(fails=run_tests())) {
       printf ("\nSelf-test OK!");
