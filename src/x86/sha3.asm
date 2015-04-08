@@ -63,7 +63,7 @@ SHA3_Init proc
     mov    al, SHA3_512_CBLOCK
     mov    cl, SHA3_512_DIGEST_LENGTH
 exit_init:
-    mov    [ebx][SHA3_CTX.blklen ], eax
+    mov    [ebx][SHA3_CTX.buflen ], eax
     mov    [ebx][SHA3_CTX.dgstlen], ecx
     mov    [ebx][SHA3_CTX.rounds ], SHA3_ROUNDS
     popad
@@ -83,20 +83,20 @@ SHA3_Update proc
     mov    esi, [esp+32+8]             ; input
     mov    eax, [esp+32+12]            ; len
     .while 1
-      ; r = MIN(len, ctx->blklen - idx);
-      mov    ecx, [ebx][SHA3_CTX.blklen]
+      ; r = MIN(len, ctx->buflen - idx);
+      mov    ecx, [ebx][SHA3_CTX.buflen]
       sub    ecx, edx
       cmp    ecx, eax
       cmovae ecx, eax
-      ; memcpy ((void*)&ctx->blk[idx], p, r);
-      lea    edi, [ebx][SHA3_CTX.blk][edx]
+      ; memcpy ((void*)&ctx->buf[idx], p, r);
+      lea    edi, [ebx][SHA3_CTX.buf][edx]
       ; idx += r
       add    edx, ecx
       ; len -= r
       sub    eax, ecx
       rep    movsb
-      ; if ((idx + r) < ctx->blklen) break;
-      .break .if edx < [ebx][SHA3_CTX.blklen]
+      ; if ((idx + r) < ctx->buflen) break;
+      .break .if edx < [ebx][SHA3_CTX.buflen]
       push   ebx
       call   SHA3_Transform
       xor    edx, edx
@@ -118,10 +118,10 @@ SHA3_Final proc
     mov    esi, [esp+32+8]
     mov    edi, [esp+32+4]
     
-    lea    eax, [esi][SHA3_CTX.blk]
+    lea    eax, [esi][SHA3_CTX.buf]
     mov    ebx, [esi][SHA3_CTX.index]
-    mov    ecx, [esi][SHA3_CTX.blklen]
-    mov    byte ptr[eax+ebx], 6
+    mov    ecx, [esi][SHA3_CTX.buflen]
+    mov    byte ptr[eax+ebx  ], 6
     or     byte ptr[eax+ecx-1], 80h
     
     push   esi
@@ -162,11 +162,11 @@ SHA3_Transform proc
     mov    eax, [ebx][SHA3_CTX.rounds]
     mov    [esp][SHA3_WS.rnds], eax
     lea    edi, [ebx][SHA3_CTX.state]
-    lea    esi, [ebx][SHA3_CTX.blk]
-    mov    ecx, [ebx][SHA3_CTX.blklen]
+    lea    esi, [ebx][SHA3_CTX.buf]
+    mov    ecx, [ebx][SHA3_CTX.buflen]
     shr    ecx, 3    ; /= 8
     pxor   mm1, mm1
-xor_blk:
+xor_buf:
     movq   mm0, [esi]
     pxor   mm0, [edi]
     movq   [edi], mm0
@@ -174,7 +174,7 @@ xor_blk:
     add    esi, 8
     add    edi, 8
     dec    ecx
-    jnz    xor_blk
+    jnz    xor_buf
     
     lea    _st, [ebx][SHA3_CTX.state]
     lea    _bc, [esp][SHA3_WS.bc]
@@ -193,9 +193,9 @@ xor_blk:
         movq    t, [_st+8*i+20*8]
         pxor    t, [_st+8*i+15*8]
         pxor    t, [_st+8*i+10*8]
-        pxor    t, [_st+8*i+5*8]
-        pxor    t, [_st+8*i]
-        movq    [_bc+8*i], t
+        pxor    t, [_st+8*i+ 5*8]
+        pxor    t, [_st+8*i     ]
+        movq    [_bc+8*i        ], t
         inc     i
         cmp     i, 5
       .until zero?

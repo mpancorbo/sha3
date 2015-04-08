@@ -14,21 +14,21 @@
 #define SHA3_ROUNDS       24
 #define SHA3_STATE_LEN    25
 
-#define SHA3_224 0
-#define SHA3_224_DIGEST_LENGTH 28
-#define SHA3_224_CBLOCK 144
+#define SHA3_224                 0
+#define SHA3_224_DIGEST_LENGTH  28
+#define SHA3_224_CBLOCK        144
 
-#define SHA3_256 1
-#define SHA3_256_DIGEST_LENGTH 32
-#define SHA3_256_CBLOCK 136
+#define SHA3_256                 1
+#define SHA3_256_DIGEST_LENGTH  32
+#define SHA3_256_CBLOCK        136
 
-#define SHA3_384 2
-#define SHA3_384_DIGEST_LENGTH 48
-#define SHA3_384_CBLOCK 104
+#define SHA3_384                 2
+#define SHA3_384_DIGEST_LENGTH  48
+#define SHA3_384_CBLOCK        104
 
-#define SHA3_512 3
+#define SHA3_512                3
 #define SHA3_512_DIGEST_LENGTH 64
-#define SHA3_512_CBLOCK  72
+#define SHA3_512_CBLOCK        72
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 

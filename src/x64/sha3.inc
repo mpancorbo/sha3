@@ -28,10 +28,10 @@ SHA3_512_CBLOCK	        EQU	72
 SHA3_CTX	struct 
   state	  dq SHA3_STATE_LEN dup (?)
   index	  dd	?
-  dgstlen	dd	?
+  dgstlen	dq	?
   rounds	dd	?
-  blklen	dd	?
-  blk	    db 256 dup (?)
+  buflen	dq	?
+  buf	    db 256 dup (?)
 SHA3_CTX	ends
 
 endif

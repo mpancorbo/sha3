@@ -50,19 +50,20 @@ size_t hex2bin (void *bin, char hex[]) {
 
 int run_tests (void)
 {
-  uint8_t dgst[256], tv[256];
-  int i, fails=0;
+  uint8_t  dgst[256], tv[256];
+  int      i, fails=0;
   SHA3_CTX ctx;
   
   for (i=0; i<sizeof(text)/sizeof(char*); i++)
   {
     SHA3_Init (&ctx, SHA3_256);
-    SHA3_Update (&ctx, text[i], strlen(text[i]));
+    SHA3_Update (&ctx, text[i], strlen (text[i]));
     SHA3_Final (dgst, &ctx);
     
     hex2bin (tv, sha3_dgst[i]);
     
     if (memcmp (dgst, tv, ctx.dgstlen) != 0) {
+      printf ("\nFailed for string \"%s\"", text[i]);
       ++fails;
     }
   }
@@ -76,7 +77,7 @@ void sha3_string (char hdr[], void *data, size_t len, int type)
   uint8_t  dgst[256];
   uint8_t *p=(uint8_t*)data;
 
-  printf ("\n%s(\"%s\")\n0x", hdr, data);
+  printf ("\n%s(\"%s\")\n0x", hdr, p);
   
   SHA3_Init (&ctx, type);
   SHA3_Update (&ctx, p, len);
@@ -85,6 +86,7 @@ void sha3_string (char hdr[], void *data, size_t len, int type)
   for (i=0; i<ctx.dgstlen; i++) {
     printf ("%02x", dgst[i]);
   }
+  putchar ('\n');
 }
 
 int main (int argc, char *argv[])
