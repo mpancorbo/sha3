@@ -1,15 +1,12 @@
 
 
-// SHA-3
+// SHA-3 in C
 // Odzhan
 
 #ifndef SHA3_H
 #define SHA3_H
 
 #include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 #define SHA3_ROUNDS       24
 #define SHA3_STATE_LEN    25
@@ -54,4 +51,5 @@ void SHA3_Final (void*, SHA3_CTX*);
 #ifdef __cplusplus
 }
 #endif
+
 #endif
