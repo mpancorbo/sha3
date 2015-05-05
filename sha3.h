@@ -44,9 +44,9 @@ typedef struct _SHA3_CTX {
 extern "C" {
 #endif
 
-void SHA3_Init (SHA3_CTX *, int);
-void SHA3_Update (SHA3_CTX*, void *, size_t);
-void SHA3_Final (void*, SHA3_CTX*);
+  void SHA3_Init (SHA3_CTX *, int);
+  void SHA3_Update (SHA3_CTX*, void *, size_t);
+  void SHA3_Final (void*, SHA3_CTX*);
 
 #ifdef __cplusplus
 }
