@@ -63,18 +63,20 @@ void SHA3_Transform (SHA3_CTX *ctx)
   uint64_t *p=(uint64_t*)ctx->blk;
   
   // xor block with state
-  for (i=0; i<ctx->blklen/8; i++) st[i] ^= p[i];
-  
+  for (i=0; i<ctx->blklen/8; i++) {
+    st[i] ^= p[i];
+  }
   for (round = 0; round < ctx->rounds; round++) 
   {
     // Theta
-    for (i = 0; i < 5; i++)     
-    bc[i] = st[i] ^ st[i + 5] ^ st[i + 10] ^ st[i + 15] ^ st[i + 20];
-
+    for (i = 0; i < 5; i++) {     
+      bc[i] = st[i] ^ st[i + 5] ^ st[i + 10] ^ st[i + 15] ^ st[i + 20];
+    }
     for (i = 0; i < 5; i++) {
       t = bc[(i + 4) % 5] ^ ROTL64(bc[(i + 1) % 5], 1);
-      for (j = 0; j < 25; j += 5)
-      st[j + i] ^= t;
+      for (j = 0; j < 25; j += 5) {
+        st[j + i] ^= t;
+      }
     }
 
     // Rho Pi
