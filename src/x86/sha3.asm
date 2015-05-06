@@ -63,7 +63,7 @@ SHA3_Init proc
     mov    al, SHA3_512_CBLOCK
     mov    cl, SHA3_512_DIGEST_LENGTH
 exit_init:
-    mov    [ebx][SHA3_CTX.buflen ], eax
+    mov    [ebx][SHA3_CTX.blklen ], eax
     mov    [ebx][SHA3_CTX.dgstlen], ecx
     mov    [ebx][SHA3_CTX.rounds ], SHA3_ROUNDS
     popad
@@ -84,19 +84,19 @@ SHA3_Update proc
     mov    eax, [esp+32+12]            ; len
     .while 1
       ; r = MIN(len, ctx->buflen - idx);
-      mov    ecx, [ebx][SHA3_CTX.buflen]
+      mov    ecx, [ebx][SHA3_CTX.blklen]
       sub    ecx, edx
       cmp    ecx, eax
       cmovae ecx, eax
       ; memcpy ((void*)&ctx->buf[idx], p, r);
-      lea    edi, [ebx][SHA3_CTX.buf][edx]
+      lea    edi, [ebx][SHA3_CTX.blk][edx]
       ; idx += r
       add    edx, ecx
       ; len -= r
       sub    eax, ecx
       rep    movsb
       ; if ((idx + r) < ctx->buflen) break;
-      .break .if edx < [ebx][SHA3_CTX.buflen]
+      .break .if edx < [ebx][SHA3_CTX.blklen]
       push   ebx
       call   SHA3_Transform
       xor    edx, edx
@@ -115,12 +115,19 @@ SHA3_Update endp
 SHA3_Final proc
     pushad
 
-    mov    esi, [esp+32+8]
-    mov    edi, [esp+32+4]
+    mov    esi, [esp+32+8] ; ctx
+    lea    edi, [esi][SHA3_CTX.blk]
+    mov    ecx, [esi][SHA3_CTX.blklen]
+    sub    ecx, [esi][SHA3_CTX.index]
+    add    edi, [esi][SHA3_CTX.index]
+    xor    eax, eax
+    rep    stosb
+
+    mov    edi, [esp+32+4] ; dgst
     
-    lea    eax, [esi][SHA3_CTX.buf]
+    lea    eax, [esi][SHA3_CTX.blk]
     mov    ebx, [esi][SHA3_CTX.index]
-    mov    ecx, [esi][SHA3_CTX.buflen]
+    mov    ecx, [esi][SHA3_CTX.blklen]
     mov    byte ptr[eax+ebx  ], 6
     or     byte ptr[eax+ecx-1], 80h
     
@@ -162,15 +169,15 @@ SHA3_Transform proc
     mov    eax, [ebx][SHA3_CTX.rounds]
     mov    [esp][SHA3_WS.rnds], eax
     lea    edi, [ebx][SHA3_CTX.state]
-    lea    esi, [ebx][SHA3_CTX.buf]
-    mov    ecx, [ebx][SHA3_CTX.buflen]
+    lea    esi, [ebx][SHA3_CTX.blk]
+    mov    ecx, [ebx][SHA3_CTX.blklen]
     shr    ecx, 3    ; /= 8
     pxor   mm1, mm1
 xor_buf:
     movq   mm0, [esi]
     pxor   mm0, [edi]
     movq   [edi], mm0
-    movq   [esi], mm1   ; zero buffer
+    movq   [esi], mm1
     add    esi, 8
     add    edi, 8
     dec    ecx

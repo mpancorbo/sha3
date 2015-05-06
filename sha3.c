@@ -90,10 +90,12 @@ void SHA3_Transform (SHA3_CTX *ctx)
 
     //  Chi
     for (j = 0; j < 25; j += 5) {
-      for (i = 0; i < 5; i++)
-      bc[i] = st[j + i];
-      for (i = 0; i < 5; i++)
-      st[j + i] ^= (~bc[(i + 1) % 5]) & bc[(i + 2) % 5];
+      for (i = 0; i < 5; i++) {
+        bc[i] = st[j + i];
+      }
+      for (i = 0; i < 5; i++) {
+        st[j + i] ^= (~bc[(i + 1) % 5]) & bc[(i + 2) % 5];
+      }
     }
     
     //  Iota
@@ -125,6 +127,8 @@ void SHA3_Update (SHA3_CTX* ctx, void *in, size_t len) {
 
 void SHA3_Final (void* dgst, SHA3_CTX* ctx)
 {
+  // thanks mpancorbo!
+  memset (ctx->blk + ctx->index, 0, ctx->blklen - ctx->index);
   // add 3 bits, Keccak uses 1
   // a lot of online implementations are using 1 instead of 6
   // since the NIST specifications haven't been finalized.

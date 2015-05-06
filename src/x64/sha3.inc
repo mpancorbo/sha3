@@ -30,8 +30,8 @@ SHA3_CTX	struct
   index	  dd	?
   dgstlen	dq	?
   rounds	dd	?
-  buflen	dq	?
-  buf	    db 256 dup (?)
+  blklen	dq	?
+  blk	    db 256 dup (?)
 SHA3_CTX	ends
 
 endif

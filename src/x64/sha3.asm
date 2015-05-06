@@ -56,7 +56,7 @@ SHA3_Init proc
     mov    al, SHA3_512_CBLOCK
     mov    cl, SHA3_512_DIGEST_LENGTH
 exit_init:
-    mov    [rdi][SHA3_CTX.buflen ], rax
+    mov    [rdi][SHA3_CTX.blklen ], rax
     mov    [rdi][SHA3_CTX.dgstlen], rcx
     mov    [rdi][SHA3_CTX.rounds ], SHA3_ROUNDS
     ; restore
@@ -87,19 +87,19 @@ SHA3_Update proc
     mov    edx, [rbx][SHA3_CTX.index]  ; idx
 update_loop:
     ; r = MIN(len, ctx->buflen - idx);
-    mov    rcx, [rbx][SHA3_CTX.buflen]
+    mov    rcx, [rbx][SHA3_CTX.blklen]
     sub    ecx, edx
     cmp    ecx, eax
     cmovae ecx, eax
     ; memcpy ((void*)&ctx->buf[idx], p, r);
-    lea    rdi, [rbx][SHA3_CTX.buf][rdx]
+    lea    rdi, [rbx][SHA3_CTX.blk][rdx]
     ; idx += r
     add    edx, ecx
     ; len -= r
     sub    eax, ecx
     rep    movsb
     ; if ((idx + r) < ctx->buflen) break;
-    cmp    rdx, [rbx][SHA3_CTX.buflen]
+    cmp    rdx, [rbx][SHA3_CTX.blklen]
     jb     save_index
 
     mov    rcx, rbx
@@ -132,13 +132,23 @@ SHA3_Final proc
     push   rsi
     push   rdi
     ; -------------
-    mov    rdi, rcx   ; rdi = output
-    mov    rsi, rdx
+    mov    rbx, rcx   ; rbx = dgst
+    mov    rsi, rdx   ; rsi = ctx
+
+    lea    rdi, [rsi][SHA3_CTX.blk]
+    mov    ecx, [rsi][SHA3_CTX.index]
+    add    rdi, rcx
+    sub    rcx, [rsi][SHA3_CTX.blklen]
+    neg    ecx
+    xor    eax, eax
+    rep    stosb
+    
+    mov    rdi, rbx
     mov    rcx, rdx
     
-    lea    rax, [rsi][SHA3_CTX.buf   ]
+    lea    rax, [rsi][SHA3_CTX.blk   ]
     mov    ebx, [rsi][SHA3_CTX.index ]
-    mov    rdx, [rsi][SHA3_CTX.buflen]
+    mov    rdx, [rsi][SHA3_CTX.blklen]
     
     mov    byte ptr[rsi+rbx  ], 6
     or     byte ptr[rsi+rdx-1], 80h
@@ -196,15 +206,13 @@ SHA3_Transform proc
     ; for (i=0; i<ctx->buflen/8; i++) 
     ;   st[i] ^= p[i];
     lea    rdi, [rbx][SHA3_CTX.state ]
-    lea    rsi, [rbx][SHA3_CTX.buf   ]
-    mov    rcx, [rbx][SHA3_CTX.buflen]
+    lea    rsi, [rbx][SHA3_CTX.blk   ]
+    mov    rcx, [rbx][SHA3_CTX.blklen]
     shr    ecx, 3    ; /= 8
-    cdq
 xor_buf:
     lodsq
     xor    rax, [rdi]
     stosq
-    mov    [rsi-8], rdx   ; zero buffer
     loop   xor_buf
 
     lea    _st, [rbx][SHA3_CTX.state]
