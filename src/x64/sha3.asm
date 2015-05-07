@@ -136,10 +136,10 @@ SHA3_Final proc
     mov    rsi, rdx   ; rsi = ctx
 
     lea    rdi, [rsi][SHA3_CTX.blk]
-    mov    ecx, [rsi][SHA3_CTX.index]
-    add    rdi, rcx
-    sub    rcx, [rsi][SHA3_CTX.blklen]
-    neg    ecx
+    mov    rcx, [rsi][SHA3_CTX.blklen]
+    mov    eax, [rsi][SHA3_CTX.index]
+    sub    ecx, eax
+    add    rdi, rax
     xor    eax, eax
     rep    stosb
     
@@ -150,8 +150,8 @@ SHA3_Final proc
     mov    ebx, [rsi][SHA3_CTX.index ]
     mov    rdx, [rsi][SHA3_CTX.blklen]
     
-    mov    byte ptr[rsi+rbx  ], 6
-    or     byte ptr[rsi+rdx-1], 80h
+    mov    byte ptr[rax+rbx  ], 6
+    or     byte ptr[rax+rdx-1], 80h
 
     call   SHA3_Transform
     
