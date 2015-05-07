@@ -65,6 +65,8 @@ void SHA3_Transform (SHA3_CTX *ctx)
   for (i=0; i<ctx->blklen/8; i++) {
     st[i] ^= p[i];
   }
+  // This upper code is not valid when blklen not divisble by 8. I.e SHA3_224
+  
   for (round = 0; round < ctx->rounds; round++) 
   {
     // Theta
